@@ -1,0 +1,255 @@
+{% extends "index.html" %}
+{% block content %}
+<div class="wrapper">
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">User Management</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item active">User Management</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button type="button" class="add btn btn-primary mb-2 float-right" data-toggle="modal" data-target="#modal-user">
+                                        <strong>Tambah User</strong>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <table id="table" class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr style="text-align: center;">
+                                                <th>No</th>
+                                                <th>Nama</th>
+                                                <th>E-mail</th>
+                                                <th>Nomor Hp</th>
+                                                <th>Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<div class="modal fade" id="modal-user">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id='form-user'>
+                <div class="modal-header">
+                    <h4 class="modal-title" id="mdl-title">Tambah User</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- <div class="form-group">
+                        <label for="role">Role</label>
+                        <select class="form-control" id="type" name="type">
+                            <option value="admin">Admin</option>
+                            <option value="anggota">Anggota</option>
+                        </select>
+                    </div> -->
+                    <div class="form-group">
+                        <label for="nama">Nama</label>
+                        <input type="text" class="form-control" id="nama" name="nama" placeholder="Masukkan Nama">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Masukkan Email">
+                    </div>
+                    <div class="form-group">
+                        <label for="nohp">No Hp</label>
+                        <input type="number" class="form-control" id="nohp" name="nohp" placeholder="Masukkan Nomor Hp">
+                    </div>
+                    <input type="hidden" name="hidden_id" id="hidden_id">
+                    <input type="hidden" name="hidden_status" id="hidden_status">
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-primary save btn-name" id="btn-sb">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    $(document).ready(function() {
+        table = $('#table').DataTable({
+            ajax: {
+                url: "/user_",
+                type: "POST",
+            },
+            lengthMenu: [10, 20, 30, 40, 50, 60, 80, 100],
+            responsive: true,
+            serverSide: true,
+            processing: true,
+            pageLength: 30,
+            order: [],
+            columns: [{
+                    "data": 'id',
+                    "sortable": false,
+                },
+                { "data": "nama" },
+                { "data": "email" },
+                { "data": "nohp" },
+                { "data": "aksi" },
+            ],
+            columnDefs: [{
+                targets: [0],
+                orderable: false,
+                searchable: false,
+            }],
+        });
+    })
+
+    $(document).on('click', '.add', function() {
+        $('#form-user')[0].reset();
+        $('#btn-sb').text('Tambah');
+        $('#mdl-title').text('Tambah user');
+        $('#hidden_status').val('add');
+    })
+
+    $(document).on('click', '.edit', function() {
+        $('#form-user')[0].reset();
+        $('#modal-user').modal('show');
+        $('#btn-sb').text('Update');
+        $('#mdl-title').text('Edit user');
+        $('#hidden_status').val('edit');
+
+        $('#hidden_id').val($(this).data('id'));
+        $('#nama').val($(this).data('nama'));
+        $('#email').val($(this).data('email'));
+        $('#nohp').val($(this).data('nohp'));
+        
+    });
+
+    $(document).on('click', '.delete', function() {
+        var id = $(this).data('id');
+        Swal.fire({
+            title: 'Apakah Anda Yakin?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Tidak',
+        }).then((result) => {
+            if (result.value) {
+                $.ajax({
+                    url: "/delete_user",
+                    type: "POST",
+                    data: {
+                        id: id
+                    },
+                    dataType: "JSON",
+                    success: function(data) {
+                        table.ajax.reload();
+                        Swal.fire({
+                            title: data.title,
+                            html: '<b>' + data.status + "</b>",
+                            icon: data.icon,
+                            timer: 3000,
+                            showCancelButton: false,
+                            showConfirmButton: false,
+                            buttons: false,
+                        });
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        alert('Error');
+                    }
+                });
+            }
+        })
+    });
+
+    $("#form-user").validate({
+        errorClass: "is-invalid",
+        // validClass: "is-valid",
+        rules: {
+            nama: {
+                required: true
+            },
+            email: {
+                required: true
+            },
+            nohp: {
+                required: true
+            }
+        },
+        submitHandler: function(form) {
+            let url;
+            if ($('#hidden_status').val() == 'add') {
+                url = '/create_user';
+            } else {
+                url = '/update_user';
+            }
+            $.ajax({
+                url: url,
+                type: "POST",
+                data: new FormData(document.getElementById("form-user")),
+                dataType: "JSON",
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function(data) {
+                    if (data.result != true) {
+                        Swal.fire({
+                            title: 'Gagal',
+                            html: "Gagal Tambah / Update user",
+                            icon: 'error',
+                            timer: 3000,
+                            showCancelButton: false,
+                            showConfirmButton: false,
+                            buttons: false,
+                        });
+                        table.ajax.reload();
+                    } else {
+                        Swal.fire({
+                            title: 'Berhasil',
+                            icon: 'success',
+                            timer: 3000,
+                            showCancelButton: false,
+                            showConfirmButton: false
+                        });
+                        $('#modal-user').modal('hide');
+                        $('body').removeClass('modal-open');
+                        table.ajax.reload();
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    alert('Error adding / update data');
+                }
+            });
+        }
+    });
+
+
+
+</script>
+{% endblock %}
